@@ -14,7 +14,6 @@ from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 from rich.console import Console
 from rich.panel import Panel
-from rich.table import Table
 from rich.tree import Tree
 
 # Configuration sécurisée pour Windows (évite les erreurs UnicodeEncodeError sur CP1252)
@@ -24,7 +23,7 @@ if sys.platform == "win32":
             sys.stdout.reconfigure(encoding="utf-8", errors="replace")
         if hasattr(sys.stderr, "reconfigure"):
             sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
+    except Exception:  # noqa: S110
         pass
 
 console = Console(legacy_windows=False, safe_box=True)
@@ -65,7 +64,7 @@ class DetailedConsoleTraceHandler(BaseCallbackHandler):
         if not step_tag or not node_name:
             return
 
-        step_info = {
+        step_info = {  # type: ignore
             "run_id": run_id,
             "node_name": node_name,
             "step_tag": step_tag,
@@ -113,9 +112,13 @@ class DetailedConsoleTraceHandler(BaseCallbackHandler):
             else:
                 visited = context_data.get("visited_agents", [])
                 if visited:
-                    step["summary"] = f"Clôture [bold magenta]FINISH[/bold magenta] (Agents intervenus : {visited})"
+                    step["summary"] = (
+                        f"Clôture [bold magenta]FINISH[/bold magenta] (Agents intervenus : {visited})"
+                    )
                 else:
-                    step["summary"] = "Clôture immédiate [bold magenta]FINISH[/bold magenta] (Garde-fou / Hors-sujet)"
+                    step["summary"] = (
+                        "Clôture immédiate [bold magenta]FINISH[/bold magenta] (Garde-fou / Hors-sujet)"
+                    )
         else:
             # Extraction d'un aperçu de la réponse pour le diagnostic
             preview = ""
@@ -182,7 +185,9 @@ class DetailedConsoleTraceHandler(BaseCallbackHandler):
             "start_time": time.perf_counter(),
         }
         if self._current_top_step:
-            self._current_top_step["details"].append(f"Outil invoqué : '{tool_name}' ({input_str[:60]})")
+            self._current_top_step["details"].append(
+                f"Outil invoqué : '{tool_name}' ({input_str[:60]})"
+            )
 
     def on_tool_end(
         self,
@@ -196,7 +201,9 @@ class DetailedConsoleTraceHandler(BaseCallbackHandler):
             elapsed = time.perf_counter() - tool_run["start_time"]
             tool_name = tool_run["name"]
             if self._current_top_step:
-                self._current_top_step["details"].append(f"Outil '{tool_name}' terminé ({elapsed:.2f}s)")
+                self._current_top_step["details"].append(
+                    f"Outil '{tool_name}' terminé ({elapsed:.2f}s)"
+                )
 
     def render_summary_panel(self) -> Panel:
         """Génère l'arbre Rich détaillé et explicite des étapes réelles."""
@@ -261,10 +268,10 @@ def get_observability_callbacks(
 
             lf_handler = LangfuseCallbackHandler(
                 public_key=langfuse_public_key,
-                secret_key=langfuse_secret_key,
-                host=langfuse_host,
-                session_id=session_id,
-                user_id=user_id,
+                secret_key=langfuse_secret_key,  # type: ignore
+                host=langfuse_host,  # type: ignore
+                session_id=session_id,  # type: ignore
+                user_id=user_id,  # type: ignore
             )
             callbacks.append(lf_handler)
             if verbose:

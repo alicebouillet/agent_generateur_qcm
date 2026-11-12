@@ -124,8 +124,10 @@ RÈGLES IMPORTANTES :
                 planned_agents = [a.strip() for a in plan.agents if a.strip() in available_agents]
             elif isinstance(plan, dict):
                 raw_list = plan.get("agents", [])
-                planned_agents = [str(a).strip() for a in raw_list if str(a).strip() in available_agents]
-        except Exception:
+                planned_agents = [
+                    str(a).strip() for a in raw_list if str(a).strip() in available_agents
+                ]
+        except Exception:  # noqa: S110
             pass
 
         # Fallback regex si structured output a échoué
@@ -137,9 +139,11 @@ RÈGLES IMPORTANTES :
             raw_text = str(raw_response.content).strip()
 
             for name in available_agents:
-                if re.search(rf"\b{re.escape(name)}\b", raw_text, re.IGNORECASE):
-                    if name not in planned_agents:
-                        planned_agents.append(name)
+                if (
+                    re.search(rf"\b{re.escape(name)}\b", raw_text, re.IGNORECASE)
+                    and name not in planned_agents
+                ):
+                    planned_agents.append(name)
 
         # Plafonner à MAX_AGENT_HOPS
         planned_agents = planned_agents[:MAX_AGENT_HOPS]

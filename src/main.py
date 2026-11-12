@@ -12,10 +12,10 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 
+from src.core.observability import get_observability_callbacks
 from src.core.registry import AgentRegistry
 from src.core.state import AgentState
 from src.orchestrator.supervisor import build_multiagent_graph
-from src.core.observability import get_observability_callbacks
 
 load_dotenv()
 
