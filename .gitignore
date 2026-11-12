@@ -1,0 +1,28 @@
+# Fichiers d'environnement
+.env
+.env.local
+*.env
+
+# Python cache & virtualenv
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Données locales vectorielles et modèles
+chroma_db/
+data/vector_store/
+*.sqlite3
+*.db
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
