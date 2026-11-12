@@ -1,0 +1,55 @@
+name: Agent Validation & Compliance CI
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-agent:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Configuration de Python
+        run: uv python install 3.12
+
+      - name: Installation des dépendances avec uv
+        run: uv sync --frozen
+
+      - name: Linting avec Ruff
+        run: uv run ruff check src/ tests/
+
+      - name: Vérification des types avec Mypy
+        run: uv run mypy src/ tests/
+
+      - name: Vérification de l'isolation des PRs (Règle anti-conflits)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Vérification des fichiers modifiés dans la PR..."
+          CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          echo "Fichiers modifiés :"
+          echo "$CHANGED_FILES"
+          
+          # Interdiction de toucher aux fichiers core sans autorisation
+          FORBIDDEN_MODIFS=$(echo "$CHANGED_FILES" | grep -E '^(src/core/|src/orchestrator/|\.github/)' || true)
+          if [ -n "$FORBIDDEN_MODIFS" ]; then
+            echo "::error::Une PR d'équipe ne doit pas modifier les fichiers centraux :"
+            echo "$FORBIDDEN_MODIFS"
+            echo "Veuillez restreindre vos modifications à votre sous-dossier src/agents/<votre_agent>/ !"
+            exit 1
+          fi
+          echo "Isolation des dossiers validée !"
+
+      - name: Exécution des tests de conformité & unitaires
+        run: uv run pytest -v

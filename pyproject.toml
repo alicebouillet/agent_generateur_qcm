@@ -1,0 +1,44 @@
+[project]
+name = "cours-agentique-starter"
+version = "0.2.0"
+description = "Squelette de projet étudiant pour le cours Systèmes Multi-Agents RAG & SLMs Locaux (LangChain 1.x & LangGraph 1.x)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "langchain>=1.4.0",
+    "langchain-core>=1.7.0",
+    "langchain-ollama>=1.1.0",
+    "langchain-chroma>=1.1.0",
+    "langgraph>=1.2.0",
+    "chromadb>=1.5.0",
+    "pydantic>=2.10.0",
+    "python-dotenv>=1.0.0",
+    "rich>=14.0.0",
+    "mcp>=1.3.0,<2.0.0",
+    "langfuse>=4.18.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.5.0",
+    "mypy>=1.10.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["src/agents", "tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+extend-ignore = ["BLE001"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+explicit_package_bases = true
