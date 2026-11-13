@@ -8,7 +8,9 @@ Directives pour votre équipe :
 2. Branchez vos filtres RAG ou vos outils Python déterministes (tools.py).
 3. Soignez le prompt système envoyé au SLM local (Ollama 3B).
 """
-
+"""
+Agent de Référence : Generateur de QCM.
+"""
 import os
 from collections.abc import Callable
 from typing import Any
@@ -31,23 +33,14 @@ class CustomAgentPlugin(BaseAgentPlugin):
 
     @property
     def name(self) -> str:
-        """TODO: Définir l'identifiant unique de votre agent en minuscules.
-
-        Exemples : 'advisor', 'auditor', 'quiz_gen', 'internship_matcher', 'workload_estimator', 'exam_planner'
-        """
-        return "custom_agent"
+        return "quiz_gen"
 
     @property
     def description(self) -> str:
-        """TODO: Rédiger la description sémantique pour le Superviseur LangGraph.
-
-        Cette description doit être précise, discriminante et riche en mots-clés
-        d'intention pour que le Superviseur sache quand vous déléguer la main.
-        """
         return (
-            "Agent spécialisé pour l'assistance académique des étudiants. "
-            "Prend en charge les demandes d'analyse pédagogique, de recommandation "
-            "et de traitement des programmes de cours de l'école."
+            "Générateur d'évaluations formatives et de QCM d'entraînement. "
+            "Génère des quiz à choix multiples fondés sur les compétences visées "
+            "et les acquis d'apprentissage d'une UE précise, et évalue les réponses."
         )
 
     def create_node(self) -> Callable[[AgentState], dict[str, Any]]:
