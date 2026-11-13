@@ -66,7 +66,12 @@ class CustomAgentPlugin(BaseAgentPlugin):
             try:
                 retriever = vector_store.as_retriever(search_kwargs={"k": 2})
                 relevant_docs = retriever.invoke(user_query)
+                context_text = "\n\n".join(
+                                    f"[Extrait {doc.metadata.get('code_ue', 'UE')} - {doc.metadata.get('section_title', '')}]\n{doc.page_content}"
+                                    for doc in relevant_docs
+                                )
             except Exception:
+                context_text = f"Information non disponible (Erreur RAG: {e})"
                 relevant_docs = []
 
             rag_context = (
