@@ -39,3 +39,20 @@ def format_domain_response(tool_results: dict[str, Any]) -> str:
     summary = tool_results.get("summary", "")
     analyzed = tool_results.get("documents_analyzed", 0)
     return f"Traitement effectué : {summary} ({analyzed} document(s) analysé(s))."
+
+
+def validate_quiz_structure(raw_quiz: dict[str, Any]) -> bool:
+    """Vérifie la conformité du schéma (présence de 4 options uniques, 1 seule clé correcte)."""
+    try:
+        options = raw_quiz.get("options", [])
+        correct = raw_quiz.get("correct", "")
+        if len(options) != 4 or len(set(options)) != 4:
+            return False
+        if correct not in options:
+            return False
+        return True
+    except Exception:
+        return False
+
+def score_quiz_submission(user_answers: dict[int, str], solution_key: dict[int, str]) -> dict[str, Any]:
+    """Compare les réponses fournies à la clé de correction et calcule la note finale."""
