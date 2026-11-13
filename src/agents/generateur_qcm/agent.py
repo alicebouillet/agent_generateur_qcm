@@ -70,7 +70,7 @@ class CustomAgentPlugin(BaseAgentPlugin):
                                     f"[Extrait {doc.metadata.get('code_ue', 'UE')} - {doc.metadata.get('section_title', '')}]\n{doc.page_content}"
                                     for doc in relevant_docs
                                 )
-            except Exception:
+            except Exception as e :
                 context_text = f"Information non disponible (Erreur RAG: {e})"
                 relevant_docs = []
 
