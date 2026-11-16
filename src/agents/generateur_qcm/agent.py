@@ -22,7 +22,12 @@ from src.core.base_agent import BaseAgentPlugin
 from src.core.ingestion import get_vector_store
 from src.core.state import AgentState
 
-from .tools import format_domain_response, process_domain_logic
+from .tools import (
+    format_domain_response,
+    format_quiz_for_student,
+    parse_quiz_output,
+    process_domain_logic,
+)
 
 
 class CustomAgentPlugin(BaseAgentPlugin):
@@ -74,28 +79,36 @@ class CustomAgentPlugin(BaseAgentPlugin):
                 context_text = f"Information non disponible (Erreur RAG: {e})"
                 relevant_docs = []
 
-            rag_context = (
-                "\n---\n".join([doc.page_content for doc in relevant_docs])
-                if relevant_docs
-                else "Aucun document spécifique trouvé."
-            )
-
             # Étape 2 : Exécution des outils Python déterministes (Règle d'or SLM)
-            # TODO: Appeler vos fonctions de tools.py (calculs, graphes, regex, JSON)
             tool_results = process_domain_logic(user_query, relevant_docs)
 
-            # Étape 3 : Synthèse par le SLM avec Prompt Système défensif
+            # Pas de contenu de cours : on répond sans appeler le SLM (évite un quiz inventé)
+            if tool_results["status"] == "no_content":
+                return {
+                    "messages": [AIMessage(content=f"[{self.name}] {format_domain_response(tool_results)}")],
+                    "current_agent": self.name,
+                }
+
+
+            # Étape 3 : Génération du QCM par le SLM (sortie JSON imposée)
+            nb_questions = tool_results["nb_questions"]
             system_prompt = (
-                f"Tu es l'agent spécialisé '{self.name}'.\n"
-                "Ton rôle est d'apporter une réponse rigoureuse, concise et factuelle à l'étudiant.\n\n"
+                f"Tu es l'agent spécialisé '{self.name}', générateur de QCM d'entraînement.\n\n"
+                f"TÂCHE : rédige exactement {nb_questions} question(s) à choix multiples "
+                "portant sur le CONTEXTE DU COURS ci-dessous.\n\n"
                 "RÈGLES STRICTES :\n"
-                "1. Base-toi EXCLUSIVEMENT sur les éléments du Contexte RAG et les Résultats des Outils fournis ci-dessous.\n"
-                "2. N'invente aucun cours, code d'UE ou prérequis non présent dans les données.\n"
-                "3. Si l'information est absente ou insuffisante, reconnais-le explicitement.\n"
-                "4. Reste concis (maximum 3 à 5 phrases claires).\n\n"
-                f"CONTEXTE RAG :\n{rag_context}\n\n"
-                f"RÉSULTATS DES OUTILS PYTHON :\n{tool_results}"
+                "1. Base-toi EXCLUSIVEMENT sur le contexte du cours. N'invente aucune notion.\n"
+                "2. Chaque question a exactement 4 options différentes et UNE SEULE bonne réponse.\n"
+                "3. 'correct' est la LETTRE de la bonne option : A = 1re, B = 2e, C = 3e, D = 4e.\n"
+                "4. Varie la position de la bonne réponse d'une question à l'autre.\n"
+                "5. Réponds UNIQUEMENT avec la liste JSON, sans texte avant ni après.\n\n"
+                "FORMAT EXACT ATTENDU :\n"
+                '[{"question": "Énoncé ?", '
+                '"options": ["option 1", "option 2", "option 3", "option 4"], '
+                '"correct": "B"}]\n\n'
+                f"CONTEXTE DU COURS :\n{context_text}"
             )
+
 
             messages = [
                 SystemMessage(content=system_prompt),
@@ -104,10 +117,17 @@ class CustomAgentPlugin(BaseAgentPlugin):
 
             try:
                 response = llm.invoke(messages)
-                response_text = str(response.content)
             except Exception:
                 # Fallback défensif en cas d'indisponibilité temporaire du SLM
                 response_text = format_domain_response(tool_results)
+            else:
+                # Étape 4 : Python vérifie la sortie du SLM avant de l'envoyer à l'étudiant
+                quiz = parse_quiz_output(str(response.content))
+                if quiz:
+                    response_text = format_quiz_for_student(quiz)
+                else:
+                    response_text = "Je n'ai pas réussi à générer un QCM valide à partir du cours. Réessaie ou reformule ta demande."
+
 
             # Préfixage obligatoire avec l'identifiant pour la traçabilité
             final_message = AIMessage(content=f"[{self.name}] {response_text}")

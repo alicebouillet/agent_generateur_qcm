@@ -35,10 +35,10 @@ NB_QUESTIONS_DEFAUT = 3
 NB_QUESTIONS_MIN = 1
 NB_QUESTIONS_MAX = 10
 
-# Code d'UE : 2 à 5 lettres, tiret optionnel, 2 à 4 chiffres (ex : INF801, MATH-204).
-# Pas d'espace autorisé, sinon "FAIS 10" serait pris pour un code d'UE.
-# À adapter au format réel des codes du syllabus.
-REGEX_CODE_UE = re.compile(r"\b([A-Z]{2,5}-?\d{2,4})\b")
+# Code d'UE au format du syllabus : 2 à 5 lettres + "_" + 3 chiffres (ex : SD_106, QSE_327).
+# On accepte aussi "SD-106" ou "SD106" ; le code est ensuite normalisé en "SD_106".
+# Pas d'espace autorisé, sinon "FAIS 100" serait pris pour un code d'UE.
+REGEX_CODE_UE = re.compile(r"\b([A-Z]{2,5})[_-]?(\d{3})\b")
 
 # Nombre de questions demandé : "5 questions", "10 QCM", "3 quiz"
 REGEX_NB_QUESTIONS = re.compile(r"(\d+)\s*(questions?|qcm|quiz)", re.IGNORECASE)
@@ -68,7 +68,7 @@ def process_domain_logic(query: str, retrieved_docs: list[Any]) -> dict[str, Any
     """
     # Code d'UE éventuellement cité par l'étudiant
     ue_match = REGEX_CODE_UE.search(query.upper())
-    code_ue = ue_match.group(1) if ue_match else None
+    code_ue = f"{ue_match.group(1)}_{ue_match.group(2)}" if ue_match else None
 
     # Nombre de questions demandé, ramené dans les bornes autorisées
     nb_match = REGEX_NB_QUESTIONS.search(query)
@@ -211,6 +211,20 @@ def score_quiz_submission(
         "details": details,
     }
 
+def format_quiz_for_student(quiz: list[dict[str, Any]]) -> str:
+    """Met en forme les questions validées pour l'étudiant, avec le corrigé à la fin."""
+    lignes = []
+    for i, q in enumerate(quiz, start=1):
+        lignes.append(f"**Question {i}.** {q['question']}")
+        for lettre, option in zip(LETTRES, q["options"]):
+            lignes.append(f"  {lettre}. {option}")
+        lignes.append("")
+
+    # Corrigé séparé pour que l'étudiant puisse chercher d'abord
+    lignes.append("**Corrigé :** " + ", ".join(
+        f"{i}-{q['correct'].strip().upper()}" for i, q in enumerate(quiz, start=1)
+    ))
+    return "\n".join(lignes)
 
 # --------------------------------------------------------------------------- #
 # 4. Réponse de secours (SLM indisponible)
