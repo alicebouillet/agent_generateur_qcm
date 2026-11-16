@@ -13,12 +13,8 @@ def process_domain_logic(query: str, retrieved_docs: list[Any]) -> dict[str, Any
     """TODO: Implémentez ici la logique métier déterministe de votre agent.
 
     Exemples selon votre archétype :
-    - advisor : calcul exact de la somme des crédits ECTS
-    - auditor : détection de cycles de dépendances (DFS) ou vérification d'éligibilité
     - quiz_gen : validation du schéma JSON (4 options A/B/C/D, 1 seule clé correcte)
-    - internship_matcher : similarité de Jaccard entre compétences du CV et de l'offre
-    - workload_estimator : calcul horaire (1 ECTS = 25h, total CM+TP)
-    - exam_planner : découpage en blocs Pomodoro sous contrainte d'heures
+
 
     Args:
         query: Texte de la question de l'étudiant
@@ -48,11 +44,22 @@ def validate_quiz_structure(raw_quiz: dict[str, Any]) -> bool:
         correct = raw_quiz.get("correct", "")
         if len(options) != 4 or len(set(options)) != 4:
             return False
-        if correct not in options:
-            return False
-        return True
+        return correct in options
     except Exception:
         return False
 
 def score_quiz_submission(user_answers: dict[int, str], solution_key: dict[int, str]) -> dict[str, Any]:
     """Compare les réponses fournies à la clé de correction et calcule la note finale."""
+    total = len(solution_key)
+    details = {
+        q: {"donnee": user_answers.get(q), "attendue": rep,
+            "correct": user_answers.get(q, "").strip().upper() == rep.strip().upper()}
+        for q, rep in solution_key.items()
+    }
+    nb_correct = sum(d["correct"] for d in details.values())
+    return {
+        "score": nb_correct,
+        "total": total,
+        "note_sur_20": round(20 * nb_correct / total, 2) if total else 0.0,
+        "details": details,
+    }
