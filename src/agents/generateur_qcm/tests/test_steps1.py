@@ -1,6 +1,7 @@
 """Test ÉTAPE 1 du Générateur de QCM: RAG ciblé avec filtres sur code_ue."""
 """Commande pour lancer ce test : python -m src.agents.generateur_qcm.tests.test_steps1"""
 import os
+
 from src.core.ingestion import get_vector_store
 
 # Charger le vector store
